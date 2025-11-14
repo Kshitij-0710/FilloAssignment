@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-k5b-=3o^y6@lif4ua8#7^=i_h^*s=z$h9r8t#voii!%m!(hgec
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -58,10 +58,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'product_importer.urls'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 TEMPLATES = [
     {
@@ -90,8 +88,12 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'prodhub_db',
+        'USER': 'prodhub_user',
+        'PASSWORD': 'mysecretpassword',
+        'HOST': '127.0.0.1',  
+        'PORT': '5435',
     }
 }
 
