@@ -185,6 +185,7 @@ You can test the API using:
 - **Postman**: Import the endpoints and test
 - **curl**: Command-line HTTP requests
 - **Django REST Framework UI**: Navigate to `http://localhost:8000/api/` in your browser
+- **ReDoc API Documentation**: Navigate to `http://localhost:8000/redoc/` for interactive API documentation
 
 ### Example: Upload CSV
 
