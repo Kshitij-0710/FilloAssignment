@@ -1,268 +1,205 @@
-# Product Importer API
+# Product Importer - Full Stack Application
 
-This is a high-performance Django backend designed to import and manage a large product catalog (500,000+ records) asynchronously.
-
-It provides a full-featured REST API for product and webhook management, built to handle large-scale data operations without request timeouts.
+A high-performance full-stack application for managing large product catalogs (500,000+ records) with asynchronous processing capabilities.
 
 ---
 
-## Tech Stack
+## 📁 Project Structure
 
-| Area | Technology | Reason |
-|------|------------|--------|
-| Backend | Django & Django Rest Framework | Rapid, simple & powerful ModelViewSet APIs |
-| Async Tasks | Celery | Handles 500k+ CSV import + bulk delete without timeouts |
-| Message Broker | Redis | Job queue for Celery |
-| Database | PostgreSQL | Handles concurrency; avoids SQLite lock issues |
-| Dev Infra | Docker | Easiest way to run Redis & Postgres locally |
+This project consists of two main components:
 
----
+### 🔧 Backend - Django REST API
+**Location**: `/backend`  
+**Documentation**: [Readme.Backend.md](./Readme.Backend.md)
 
-## Features
+A Django-based REST API with Celery for asynchronous task processing, handling large-scale CSV imports and product management.
 
-### Story 1 & 1A: Async CSV Upload & Progress
+**Key Technologies**:
+- Django & Django REST Framework
+- Celery (async task queue)
+- Redis (message broker)
+- PostgreSQL (database)
+- Docker (infrastructure)
 
-- POST `/api/products/upload/` accepts a CSV, creates an `UploadJob`, and queues a Celery task.
-- Celery deduplicates 500k+ rows in-memory using a Python dict.
-- Uses `bulk_create(update_conflicts=True)` for a single high-speed UPSERT.
-- GET `/api/job/<uuid:job_id>/status/` returns: `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`.
-- Errors saved to the `UploadJob.error_message` field.
-
-### Story 2: Full Product Management
-
-- `/api/products/` supports full CRUD (ModelViewSet).
-- Filtering: `?sku=ABC123`, `?active=true`
-- Search: `?search=laptop`
-- Pagination: default 25 per page.
-
-### Story 3: Bulk Delete
-
-- POST `/api/products/bulk_delete/` queues a Celery task.
-- Returns `202 Accepted` immediately.
-
-### Story 4: Webhook Manager
-
-- `/api/webhooks/` full CRUD.
-- POST `/api/webhooks/<id>/test/` sends a live test payload with `requests`.
+**Features**:
+- Async CSV upload (500k+ records)
+- Full CRUD product management
+- Bulk delete operations
+- Webhook management
+- ReDoc API documentation
 
 ---
 
-## Local Setup & Installation
+### 🎨 Frontend - React Application
+**Location**: `/frontend`  
+**Documentation**: [Readme.Frontend.md](./Readme.Frontend.md)
 
-### 1. Prerequisites
+A modern React frontend built with Vite, providing an intuitive UI for product and webhook management.
 
+**Key Technologies**:
+- React 19.2.0
+- Vite 7.2.2
+- Axios
+- Modern CSS
+
+**Features**:
+- Drag-and-drop CSV upload
+- Real-time job status tracking
+- Product search & filtering
+- Webhook testing interface
+- Responsive design
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
 - Python 3.10+
-- Docker Desktop (running)
+- Node.js 18+
+- Docker Desktop
 
 ---
 
-### 2. Clone Repository
+### 1. Start Backend
 
 ```bash
-git clone <your-repo-url>
-cd <your-project-folder>
-```
+# Navigate to backend
+cd backend
 
-
-```
-
----
-
-### 3. Create Virtual Environment
-
-```bash
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+source venv/bin/activate
 
----
-
-### 4. Install Dependencies
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
----
-
-### 5. Start Redis (Docker)
-
-```bash
+# Start Redis & PostgreSQL (Docker)
 docker run -d --name prodhub-redis -p 6379:6379 redis
-```
-
----
-
-### 6. Start PostgreSQL (Docker)
-
-```bash
-docker run -d \
-  --name prodhub-postgres \
+docker run -d --name prodhub-postgres \
   -e POSTGRES_DB=prodhub_db \
   -e POSTGRES_USER=prodhub_user \
   -e POSTGRES_PASSWORD=mysecretpassword \
-  -p 5433:5432 \
-  postgres:15
-```
+  -p 5433:5432 postgres:15
 
-PostgreSQL is already configured in `product_importer/settings.py`:
-
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'prodhub_db',
-        'USER': 'prodhub_user',
-        'PASSWORD': 'mysecretpassword',
-        'HOST': 'localhost',
-        'PORT': '5433',
-    }
-}
-```
-
----
-
-### 7. Run Database Migrations
-
-```bash
-cd backend
+# Run migrations
 python manage.py migrate
-```
 
----
-
-### 8. Start Celery Worker
-
-Open a new terminal and run:
-
-```bash
-cd backend
-source ../venv/bin/activate  # Activate virtual environment
-celery -A product_importer worker --loglevel=info
-```
-
----
-
-### 9. Start Django Development Server
-
-In another terminal:
-
-```bash
-cd backend
-source ../venv/bin/activate  # Activate virtual environment
+# Start Django server
 python manage.py runserver
 ```
 
----
+In a separate terminal, start Celery worker:
+```bash
+cd backend
+source venv/bin/activate
+celery -A product_importer worker --loglevel=info
+```
 
-## API Endpoints
-
-### Products
-
-- `GET /api/products/` - List all products (with pagination, filtering, search)
-- `POST /api/products/` - Create a new product
-- `GET /api/products/{id}/` - Retrieve a specific product
-- `PUT /api/products/{id}/` - Update a product
-- `DELETE /api/products/{id}/` - Delete a product
-- `POST /api/products/upload/` - Upload CSV file for bulk import
-- `POST /api/products/bulk_delete/` - Bulk delete products
-- `GET /api/job/{job_id}/status/` - Check upload job status
-
-### Webhooks
-
-- `GET /api/webhooks/` - List all webhooks
-- `POST /api/webhooks/` - Create a new webhook
-- `GET /api/webhooks/{id}/` - Retrieve a specific webhook
-- `PUT /api/webhooks/{id}/` - Update a webhook
-- `DELETE /api/webhooks/{id}/` - Delete a webhook
-- `POST /api/webhooks/{id}/test/` - Test a webhook
+Backend will run at: `http://localhost:8000`
 
 ---
 
-## Testing the API
-
-You can test the API using:
-- **Postman**: Import the endpoints and test
-- **curl**: Command-line HTTP requests
-- **Django REST Framework UI**: Navigate to `http://localhost:8000/api/` in your browser
-- **ReDoc API Documentation**: Navigate to `http://localhost:8000/redoc/` for interactive API documentation
-
-### Example: Upload CSV
+### 2. Start Frontend
 
 ```bash
-curl -X POST http://localhost:8000/api/products/upload/ \
-  -F "file=@products.csv"
+# Navigate to frontend
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-### Example: Check Job Status
-
-```bash
-curl http://localhost:8000/api/job/{job_id}/status/
-```
+Frontend will run at: `http://localhost:5173`
 
 ---
 
-## Troubleshooting
+## 📚 Documentation
 
-### Redis Connection Error
-Ensure Redis container is running:
-```bash
-docker ps | grep prodhub-redis
-```
+For detailed setup, configuration, and usage instructions:
 
-If not running, start it:
-```bash
-docker start prodhub-redis
-```
+- **Backend Documentation**: [Readme.Backend.md](./Readme.Backend.md)
+  - API endpoints
+  - Database configuration
+  - Celery task management
+  - Troubleshooting
 
-### PostgreSQL Connection Error
-Ensure PostgreSQL container is running:
-```bash
-docker ps | grep prodhub-postgres
-```
-
-If not running, start it:
-```bash
-docker start prodhub-postgres
-```
-
-### Celery Worker Not Processing Tasks
-Make sure the Celery worker is running in a separate terminal with the correct app name and settings.
+- **Frontend Documentation**: [Readme.Frontend.md](./Readme.Frontend.md)
+  - Component overview
+  - Build and deployment
+  - Environment configuration
+  - Styling guide
 
 ---
 
-## Project Structure
+## 🔗 Key URLs
 
-```
-FilloAssignment/
-├── backend/
-│   ├── manage.py
-│   ├── requirements.txt
-│   ├── db.sqlite3
-│   ├── prodhub/          # Main app for product management
-│   │   ├── models.py
-│   │   ├── views.py
-│   │   ├── serializers.py
-│   │   ├── tasks.py      # Celery tasks
-│   │   └── migrations/
-│   ├── webhook/          # Webhook management app
-│   │   ├── models.py
-│   │   ├── views.py
-│   │   └── serializers.py
-│   └── product_importer/ # Django project settings
-│       ├── settings.py
-│       ├── urls.py
-│       ├── celery.py
-│       └── routing.py
-├── frontend/             # React frontend (optional)
-└── products.csv          # Sample CSV file
-```
+| Service | URL | Description |
+|---------|-----|-------------|
+| Frontend | http://localhost:5173 | React application |
+| Backend API | http://localhost:8000/api/ | REST API endpoints |
+| API Docs (ReDoc) | http://localhost:8000/redoc/ | Interactive API documentation |
+| Django Admin | http://localhost:8000/admin/ | Django admin panel |
 
 ---
 
-## License
+## 📦 Features Overview
+
+### Story 1 & 1A: CSV Upload with Progress Tracking
+- Upload large CSV files (500k+ records)
+- Real-time job status updates
+- Asynchronous processing with Celery
+
+### Story 2: Product Management
+- Full CRUD operations
+- Search and filtering
+- Pagination support
+
+### Story 3: Bulk Operations
+- Bulk delete all products
+- Background task processing
+
+### Story 4: Webhook Management
+- Create and manage webhooks
+- Test webhook endpoints
+- Event-based notifications
+
+---
+
+## 🛠️ Tech Stack Summary
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| Frontend | React + Vite | Fast, modern UI |
+| Backend | Django + DRF | RESTful API |
+| Task Queue | Celery | Async processing |
+| Message Broker | Redis | Task distribution |
+| Database | PostgreSQL | Data persistence |
+| Infrastructure | Docker | Service orchestration |
+
+---
+
+## 📄 License
 
 This project is licensed under the MIT License.
 
+---
+
+## 🤝 Contributing
+
+1. Read the backend documentation in [Readme.Backend.md](./Readme.Backend.md)
+2. Read the frontend documentation in [Readme.Frontend.md](./Readme.Frontend.md)
+3. Follow the setup instructions for both components
+4. Submit pull requests with clear descriptions
 
 ---
+
+## 📞 Support
+
+For issues or questions:
+- Check the troubleshooting sections in backend/frontend docs
+- Review API documentation at `/redoc/`
+- Inspect browser console for frontend errors
+- Check Django logs for backend errors
