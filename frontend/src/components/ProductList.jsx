@@ -1,5 +1,5 @@
 // frontend/src/components/ProductList.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../api.jsx';
 
 // --- Default state for a blank product ---
@@ -15,6 +15,9 @@ function ProductList({ refreshKey }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // Ref for polling interval
+  const pollIntervalRef = useRef(null);
+  
   // --- State for the dialog (Create/Edit) ---
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -29,6 +32,8 @@ function ProductList({ refreshKey }) {
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
   const [showDeleteAllWarning, setShowDeleteAllWarning] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [deletionProgress, setDeletionProgress] = useState('');
 
   // --- State for Pagination and Search ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,8 +48,10 @@ function ProductList({ refreshKey }) {
   });
 
   // --- Data Fetching ---
-  const fetchProducts = async () => {
-    setLoading(true);
+  const fetchProducts = async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
     try {
       const response = await api.get('/products/', {
         params: { page: currentPage, search: activeSearch }
@@ -60,7 +67,9 @@ function ProductList({ refreshKey }) {
     } catch (error) {
       console.error("Failed to fetch products:", error);
     }
-    setLoading(false);
+    if (showLoading) {
+      setLoading(false);
+    }
   };
 
   // Re-fetch when refreshKey, page, or search changes
@@ -103,7 +112,7 @@ function ProductList({ refreshKey }) {
     setIsEditing(false);
     setIsDialogOpen(false);
     setFormError(null);
-    fetchProducts(); // Refresh the list
+    fetchProducts(false); // Refresh the list without loading indicator
   };
 
   // Called when "Create" button is clicked
@@ -139,7 +148,7 @@ function ProductList({ refreshKey }) {
       await api.delete(`/products/${productToDelete}/`);
       setShowDeleteWarning(false);
       setProductToDelete(null);
-      fetchProducts();
+      fetchProducts(false);
     } catch (err) {
       console.error("Failed to delete product:", err);
     }
@@ -151,6 +160,13 @@ function ProductList({ refreshKey }) {
     setCurrentPage(1); 
     setActiveSearch(searchTerm);
   };
+  
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setActiveSearch('');
+    setCurrentPage(1);
+  };
+  
   const handleNext = () => (pageInfo.next) && setCurrentPage(p => p + 1);
   const handlePrevious = () => (pageInfo.previous) && setCurrentPage(p => p - 1);
 
@@ -160,17 +176,91 @@ function ProductList({ refreshKey }) {
   };
 
   const confirmBulkDelete = async () => {
+    // Clear any existing polling interval
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
+    
+    setIsDeletingAll(true);
+    setDeletionProgress('Initiating bulk delete...');
+    
     try {
-      await api.post('/products/bulk_delete/');
-      setShowDeleteAllWarning(false);
-      setCurrentPage(1);
-      setActiveSearch('');
-      setSearchTerm('');
-      fetchProducts(); 
+      // Start the background task
+      const response = await api.post('/products/bulk_delete/');
+      console.log('Bulk delete started:', response);
+      
+      setDeletionProgress('Deleting all products in background...');
+      
+      // Wait a bit before starting to poll
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Poll to check if products are deleted
+      let attempts = 0;
+      const maxAttempts = 120; // 2 minutes max
+      
+      pollIntervalRef.current = setInterval(async () => {
+        attempts++;
+        console.log(`Polling attempt ${attempts}...`);
+        
+        try {
+          const response = await api.get('/products/', { params: { page: 1 } });
+          const productCount = response.data.count;
+          
+          console.log(`Products remaining: ${productCount}`);
+          setDeletionProgress(`Deleting... ${productCount} products remaining`);
+          
+          // If no products left or max attempts reached
+          if (productCount === 0) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+            setDeletionProgress('Deletion complete! ✓');
+            
+            // Wait a moment before closing
+            setTimeout(() => {
+              setShowDeleteAllWarning(false);
+              setIsDeletingAll(false);
+              setDeletionProgress('');
+              setCurrentPage(1);
+              setActiveSearch('');
+              setSearchTerm('');
+              fetchProducts(true); // Show loading for bulk delete completion
+            }, 1500);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+            setDeletionProgress('Timeout reached. Please refresh to check status.');
+            setTimeout(() => {
+              setIsDeletingAll(false);
+            }, 3000);
+          }
+        } catch (error) {
+          console.error("Failed to check deletion status:", error);
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+          setDeletionProgress('Error checking status. Please refresh manually.');
+          setTimeout(() => {
+            setIsDeletingAll(false);
+          }, 3000);
+        }
+      }, 1000); // Poll every second
+      
     } catch (error) {
-      console.error("Failed to bulk delete:", error);
+      console.error("Failed to start bulk delete:", error);
+      setIsDeletingAll(false);
+      setDeletionProgress('');
+      setShowDeleteAllWarning(false);
+      alert('Failed to start bulk delete. Please try again.');
     }
   };
+  
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   // --- RENDER ---
   return (
@@ -196,7 +286,7 @@ function ProductList({ refreshKey }) {
 
       {/* --- Delete All Warning Modal --- */}
       {showDeleteAllWarning && (
-        <div className="dialog-overlay" onClick={() => setShowDeleteAllWarning(false)}>
+        <div className="dialog-overlay" onClick={() => !isDeletingAll && setShowDeleteAllWarning(false)}>
           <div className="warning-modal danger-modal" onClick={(e) => e.stopPropagation()}>
             <div className="warning-header danger">
               <div className="warning-icon-large">🚨</div>
@@ -204,16 +294,30 @@ function ProductList({ refreshKey }) {
             </div>
             <div className="warning-content">
               <div className="danger-box">
-                <p className="danger-title">YOU ARE ABOUT TO DELETE ALL PRODUCTS!</p>
-                <p className="danger-message">This action will permanently delete <strong>ALL {pageInfo.count} products</strong> from your database.</p>
-                <p className="danger-warning">⛔ This action is IRREVERSIBLE and CANNOT be undone!</p>
-                <p className="danger-confirm">Are you absolutely sure you want to continue?</p>
+                {isDeletingAll ? (
+                  <>
+                    <div className="deleting-loader">
+                      <div className="spinner"></div>
+                      <p className="deleting-text">{deletionProgress || 'Deleting all products...'}</p>
+                      <p className="deleting-subtext">This process runs in the background. Please wait...</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="danger-title">YOU ARE ABOUT TO DELETE ALL PRODUCTS!</p>
+                    <p className="danger-message">This action will permanently delete <strong>ALL {pageInfo.count} products</strong> from your database.</p>
+                    <p className="danger-warning">⛔ This action is IRREVERSIBLE and CANNOT be undone!</p>
+                    <p className="danger-confirm">Are you absolutely sure you want to continue?</p>
+                  </>
+                )}
               </div>
             </div>
-            <div className="warning-actions">
-              <button className="cancel-btn" onClick={() => setShowDeleteAllWarning(false)}>Cancel</button>
-              <button className="danger-btn critical" onClick={confirmBulkDelete}>Yes, Delete Everything</button>
-            </div>
+            {!isDeletingAll && (
+              <div className="warning-actions">
+                <button className="cancel-btn" onClick={() => setShowDeleteAllWarning(false)}>Cancel</button>
+                <button className="danger-btn critical" onClick={confirmBulkDelete}>Yes, Delete Everything</button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -339,13 +443,25 @@ function ProductList({ refreshKey }) {
         <button className="create-btn" onClick={handleCreateClick}>
           + Create Product
         </button>
-        <form onSubmit={handleSearch}>
-          <input 
-            type="search" 
-            placeholder="Search by SKU, name, description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <form onSubmit={handleSearch} className="search-form">
+          <div className="search-input-wrapper">
+            <input 
+              type="text" 
+              placeholder="Search by SKU, name, description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {activeSearch && (
+              <button 
+                type="button" 
+                className="clear-search-btn"
+                onClick={handleClearSearch}
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <button type="submit">Search</button>
         </form>
         <button className="delete-all-btn" onClick={handleBulkDelete}>
