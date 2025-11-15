@@ -60,7 +60,19 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'product_importer.urls'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOWED_ORIGINS = [
+    "https://fullfill.kshitijmoghe.tech",
+    "https://full-fill-assignment.vercel.app",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://fullfill.kshitijmoghe.tech",
+]
+
 
 
 TEMPLATES = [

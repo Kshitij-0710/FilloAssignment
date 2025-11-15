@@ -136,6 +136,16 @@ For detailed setup, configuration, and usage instructions:
 
 ## 🔗 Key URLs
 
+### 🌐 Live Deployment
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Frontend** | https://full-fill-assignment.vercel.app | Live React application |
+| **Backend API** | https://fullfill.kshitijmoghe.tech/api/ | Live REST API endpoints |
+| **API Docs (ReDoc)** | https://fullfill.kshitijmoghe.tech/redoc/ | Interactive API documentation |
+
+### 💻 Local Development
+
 | Service | URL | Description |
 |---------|-----|-------------|
 | Frontend | http://localhost:5173 | React application |
