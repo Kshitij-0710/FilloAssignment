@@ -51,6 +51,19 @@ A modern React frontend built with Vite, providing an intuitive UI for product a
 
 ---
 
+## 🛠️ Tech Stack Summary
+
+| Layer | Technology | Purpose |
+|-------|------------|---------||
+| Frontend | React + Vite | Fast, modern UI |
+| Backend | Django + DRF | RESTful API |
+| Task Queue | Celery | Async processing |
+| Message Broker | Redis | Task distribution |
+| Database | PostgreSQL | Data persistence |
+| Infrastructure | Docker | Service orchestration |
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -162,6 +175,11 @@ For detailed setup, configuration, and usage instructions:
 - Real-time job status updates
 - Asynchronous processing with Celery
 
+**⚡ Upload Performance Note:**  
+Initial file upload may take 14–25 seconds for large files (80–90MB). This delay is due to network upload time from browser to server, not backend processing. Once the file reaches the server, the backend responds instantly and processing happens asynchronously in the background.
+
+*Future Enhancement:* Direct uploads to AWS S3 using presigned URLs can eliminate this delay entirely by uploading directly from browser to S3's high-speed pipeline, with the API only receiving the S3 file reference.
+
 ### Story 2: Product Management
 - Full CRUD operations
 - Search and filtering
@@ -175,25 +193,6 @@ For detailed setup, configuration, and usage instructions:
 - Create and manage webhooks
 - Test webhook endpoints
 - Event-based notifications
-
----
-
-## 🛠️ Tech Stack Summary
-
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| Frontend | React + Vite | Fast, modern UI |
-| Backend | Django + DRF | RESTful API |
-| Task Queue | Celery | Async processing |
-| Message Broker | Redis | Task distribution |
-| Database | PostgreSQL | Data persistence |
-| Infrastructure | Docker | Service orchestration |
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
