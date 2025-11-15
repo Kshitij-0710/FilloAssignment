@@ -12,6 +12,11 @@ A high-performance full-stack application for managing large product catalogs (5
 | **Backend API** | [https://fullfill.kshitijmoghe.tech/api/](https://fullfill.kshitijmoghe.tech/api/) |
 | **API Docs (ReDoc)** | [https://fullfill.kshitijmoghe.tech/redoc/](https://fullfill.kshitijmoghe.tech/redoc/) |
 
+**⚡ Upload Performance Note:**  
+Initial file upload may take 14–25 seconds for large files (80–90MB). This delay is due to network upload time from browser to server, not backend processing. Once the file reaches the server, the backend responds instantly and processing happens asynchronously in the background.
+
+*Future Enhancement:* Direct uploads to AWS S3 using presigned URLs can eliminate this delay entirely by uploading directly from browser to S3's high-speed pipeline, with the API only receiving the S3 file reference.
+
 ---
 
 ## 📁 Project Structure
@@ -109,14 +114,6 @@ For detailed setup, configuration, and usage instructions:
 ---
 
 ## 🔗 Key URLs
-
-### 🌐 Live Deployment
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Frontend** | https://full-fill-assignment.vercel.app | Live React application |
-| **Backend API** | https://fullfill.kshitijmoghe.tech/api/ | Live REST API endpoints |
-| **API Docs (ReDoc)** | https://fullfill.kshitijmoghe.tech/redoc/ | Interactive API documentation |
 
 ### 💻 Local Development
 
