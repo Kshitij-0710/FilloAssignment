@@ -16,32 +16,30 @@ services:
     restart: unless-stopped
 
   web:
-    build: . 
+    build: .
     command: gunicorn product_importer.wsgi --bind 0.0.0.0:8000
-    volumes:
-      - .:/app # Mounts the current folder to /app
     ports:
-      - "8000:8000" 
+      - "8000:8000"
     environment:
       - RDS_DB_NAME=prodhub_db
       - RDS_USERNAME=prodhub_user
       - RDS_PASSWORD=mysecretpassword
       - RDS_HOSTNAME=db 
       - RDS_PORT=5432
-      - REDIS_HOSTNAME=redis # <-- Uses the service name 'redis'
+      - REDIS_HOSTNAME=redis
       - REDIS_PORT=6379
       - DEBUG=False
-      - ALLOWED_HOST=*
     depends_on:
       - db
       - redis
+    volumes:
+      - static_volume:/app/staticfiles
+
     restart: unless-stopped
 
   worker:
-    build: . 
+    build: .
     command: celery -A product_importer worker --loglevel=info
-    volumes:
-      - .:/app # Mounts the current folder to /app
     environment:
       - RDS_DB_NAME=prodhub_db
       - RDS_USERNAME=prodhub_user
@@ -51,11 +49,10 @@ services:
       - REDIS_HOSTNAME=redis
       - REDIS_PORT=6379
       - DEBUG=False
-      - ALLOWED_HOST=*
     depends_on:
       - db
       - redis
-    restart: unless-stopped
 
 volumes:
-  postgres_data: # This volume makes your database data "persist"
+  postgres_data:
+  static_volume:
