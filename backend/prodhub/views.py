@@ -1,4 +1,3 @@
-# prodhub/views.py
 from rest_framework import viewsets, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Product, UploadJob
