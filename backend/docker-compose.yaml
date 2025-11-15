@@ -16,32 +16,32 @@ services:
     restart: unless-stopped
 
   web:
-    build: ./backend # Tells it to find the Dockerfile in the 'backend' folder
+    build: . 
     command: gunicorn product_importer.wsgi --bind 0.0.0.0:8000
     volumes:
-      - ./backend:/app # Mounts your code
+      - .:/app # Mounts the current folder to /app
     ports:
-      - "8000:8000" # Exposes port 8000 to your EC2 instance
+      - "8000:8000" 
     environment:
       - RDS_DB_NAME=prodhub_db
       - RDS_USERNAME=prodhub_user
       - RDS_PASSWORD=mysecretpassword
-      - RDS_HOSTNAME=db # <-- This is the "magic". It uses the service name 'db'
+      - RDS_HOSTNAME=db 
       - RDS_PORT=5432
       - REDIS_HOSTNAME=redis # <-- Uses the service name 'redis'
       - REDIS_PORT=6379
       - DEBUG=False
-      - ALLOWED_HOST=* # Be more specific in production!
+      - ALLOWED_HOST=*
     depends_on:
       - db
       - redis
     restart: unless-stopped
 
   worker:
-    build: ./backend
+    build: . 
     command: celery -A product_importer worker --loglevel=info
     volumes:
-      - ./backend:/app
+      - .:/app # Mounts the current folder to /app
     environment:
       - RDS_DB_NAME=prodhub_db
       - RDS_USERNAME=prodhub_user
