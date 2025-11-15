@@ -12,6 +12,10 @@ A high-performance full-stack application for managing large product catalogs (5
 | **Backend API** | [https://fullfill.kshitijmoghe.tech/api/](https://fullfill.kshitijmoghe.tech/api/) |
 | **API Docs (ReDoc)** | [https://fullfill.kshitijmoghe.tech/redoc/](https://fullfill.kshitijmoghe.tech/redoc/) |
 
+**🚀 Deployment:**
+- **Frontend:** Deployed on Vercel
+- **Backend:** Deployed on AWS EC2 instance running Docker Compose with Django, Celery, Redis, and PostgreSQL services
+
 **⚡ Upload Performance Note:**  
 Initial file upload may take 14–25 seconds for large files (80–90MB). This delay is due to network upload time from browser to server, not backend processing. Once the file reaches the server, the backend responds instantly and processing happens asynchronously in the background.
 
